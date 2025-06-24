@@ -135,3 +135,51 @@ update_webset_exa with:
 2. create_webset_enrichment_exa (add missing data)
 3. search_webset_items_exa (filter and export)
 ```
+
+## Advanced Operations
+
+### Batch Processing
+```
+// Update multiple items at once
+batch_update_items_exa with:
+- itemIds: ["item1", "item2", "item3"]
+- updates: { metadata: { "status": "qualified" } }
+
+// Bulk verify leads
+batch_verify_items_exa with:
+- itemIds: ["item1", "item2", "item3"]
+- status: "verified"
+- reasoning: "Confirmed by sales team"
+```
+
+### Advanced Filtering
+```
+// Find recently updated verified leads
+list_webset_items_exa with:
+- verificationStatus: "verified"
+- updatedAfter: "2024-01-01T00:00:00Z"
+- hasEnrichedData: true
+
+// Search with complex filters
+search_webset_items_exa with:
+- filters: {
+    type: "company",
+    verificationStatus: "verified",
+    metadata: { "industry": "fintech" },
+    createdAfter: "2024-01-01T00:00:00Z"
+  }
+```
+
+### Data Export
+```
+// Export enriched leads to CSV
+create_export_exa with:
+- format: "csv"
+- filters: {
+    verificationStatus: "verified",
+    hasEnrichedData: true
+  }
+
+// Check export status
+get_export_exa (returns download URL when ready)
+```

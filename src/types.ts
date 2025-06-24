@@ -310,6 +310,27 @@ export interface MonitorRun {
   startedAt: string;
   completedAt?: string | null;
   itemsFound?: number | null;
+  itemsAdded?: number | null;
+  error?: string | null;
+}
+
+export interface Export {
+  id: string;
+  object: 'export';
+  websetId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  format: 'csv' | 'json' | 'xlsx';
+  downloadUrl?: string | null;
+  expiresAt?: string | null;
+  filters?: {
+    itemIds?: string[];
+    verificationStatus?: 'verified' | 'pending' | 'failed';
+    hasEnrichedData?: boolean;
+    itemType?: string;
+  };
+  itemCount?: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Webhook {
@@ -428,6 +449,58 @@ export interface UpdateWebhookInput {
   status?: 'active' | 'inactive';
 }
 
+// Export Types
+export interface CreateExportInput {
+  format: 'csv' | 'json' | 'xlsx';
+  filters?: {
+    itemIds?: string[];
+    verificationStatus?: 'verified' | 'pending' | 'failed';
+    hasEnrichedData?: boolean;
+    itemType?: string;
+  };
+  fields?: string[]; // Specific fields to include
+}
+
+// Item Update Types
+export interface UpdateItemInput {
+  metadata?: Record<string, string>;
+  verification?: {
+    status: 'verified' | 'pending' | 'failed';
+    reasoning?: string;
+  };
+  customFields?: Record<string, any>;
+}
+
+// Batch Operation Types
+export interface BatchUpdateItemsInput {
+  itemIds: string[];
+  updates: {
+    metadata?: Record<string, string>;
+    addTags?: string[];
+    removeTags?: string[];
+    customFields?: Record<string, any>;
+  };
+}
+
+export interface BatchDeleteItemsInput {
+  itemIds: string[];
+}
+
+// Advanced Filter Types
+export interface ItemFilters {
+  type?: string;
+  verificationStatus?: 'verified' | 'pending' | 'failed';
+  hasEnrichedData?: boolean;
+  enrichmentStatus?: Record<string, 'completed' | 'pending' | 'failed'>;
+  createdAfter?: string;
+  createdBefore?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
+  metadata?: Record<string, string>;
+  limit?: number;
+  cursor?: string;
+}
+
 // Event Types
 export type EventType =
   | 'webset.created'
@@ -440,14 +513,22 @@ export type EventType =
   | 'webset.search.canceled'
   | 'webset.item.created'
   | 'webset.item.enriched'
+  | 'webset.item.updated'
+  | 'webset.item.deleted'
   | 'import.created'
   | 'import.completed'
   | 'import.processing'
+  | 'import.failed'
+  | 'import.canceled'
   | 'webset.export.created'
   | 'webset.export.completed'
+  | 'webset.export.failed'
   | 'webset.monitor.run.started'
   | 'webset.monitor.run.completed'
-  | 'webset.monitor.run.failed';
+  | 'webset.monitor.run.failed'
+  | 'webhook.created'
+  | 'webhook.updated'
+  | 'webhook.deleted';
 
 // Response Types
 export interface PaginatedList<T> {

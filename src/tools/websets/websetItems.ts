@@ -13,9 +13,16 @@ export function registerWebsetItemTools(server: McpServer, config?: { exaApiKey?
     {
       websetId: z.string().describe("The unique identifier of the Webset"),
       cursor: z.string().optional().describe("Pagination cursor from previous response"),
-      limit: z.number().optional().describe("Number of results per page (default: 25, max: 200)")
+      limit: z.number().optional().describe("Number of results per page (default: 25, max: 200)"),
+      type: z.string().optional().describe("Filter by item type"),
+      verificationStatus: z.enum(['verified', 'pending', 'failed']).optional().describe("Filter by verification status"),
+      hasEnrichedData: z.boolean().optional().describe("Filter by enrichment status"),
+      createdAfter: z.string().optional().describe("Filter items created after this date (ISO 8601)"),
+      createdBefore: z.string().optional().describe("Filter items created before this date (ISO 8601)"),
+      updatedAfter: z.string().optional().describe("Filter items updated after this date (ISO 8601)"),
+      updatedBefore: z.string().optional().describe("Filter items updated before this date (ISO 8601)")
     },
-    async ({ websetId, cursor, limit }) => {
+    async ({ websetId, cursor, limit, ...filters }) => {
       const requestId = `list_webset_items_exa-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const logger = createRequestLogger(requestId, 'list_webset_items_exa');
       
@@ -34,6 +41,13 @@ export function registerWebsetItemTools(server: McpServer, config?: { exaApiKey?
         const params = new URLSearchParams();
         if (cursor) params.append('cursor', cursor);
         if (limit) params.append('limit', limit.toString());
+        if (filters.type) params.append('type', filters.type);
+        if (filters.verificationStatus) params.append('verificationStatus', filters.verificationStatus);
+        if (filters.hasEnrichedData !== undefined) params.append('hasEnrichedData', filters.hasEnrichedData.toString());
+        if (filters.createdAfter) params.append('createdAfter', filters.createdAfter);
+        if (filters.createdBefore) params.append('createdBefore', filters.createdBefore);
+        if (filters.updatedAfter) params.append('updatedAfter', filters.updatedAfter);
+        if (filters.updatedBefore) params.append('updatedBefore', filters.updatedBefore);
         
         const url = API_CONFIG.ENDPOINTS.WEBSET_ITEMS.replace(':websetId', websetId);
         const response = await axiosInstance.get<PaginatedWebsetItemList>(url, { params });
@@ -229,21 +243,29 @@ export function registerWebsetItemTools(server: McpServer, config?: { exaApiKey?
     }
   );
 
-  // Search Webset Items Tool (client-side filtering)
+  // Search Webset Items Tool
   server.tool(
     "search_webset_items_exa",
-    "Search and filter items within a Webset based on various criteria. This tool retrieves all items and filters them locally.",
+    "Search and filter items within a Webset based on various criteria using server-side filtering for optimal performance.",
     {
       websetId: z.string().describe("The unique identifier of the Webset"),
       filters: z.object({
         type: z.string().optional().describe("Filter by item type (e.g., 'company', 'person', 'article')"),
         verificationStatus: z.enum(['verified', 'pending', 'failed']).optional().describe("Filter by verification status"),
         hasEnrichedData: z.boolean().optional().describe("Filter items that have enriched data"),
+        enrichmentStatus: z.record(z.enum(['completed', 'pending', 'failed'])).optional().describe("Filter by enrichment status"),
+        createdAfter: z.string().optional().describe("Filter items created after this date (ISO 8601)"),
+        createdBefore: z.string().optional().describe("Filter items created before this date (ISO 8601)"),
+        updatedAfter: z.string().optional().describe("Filter items updated after this date (ISO 8601)"),
+        updatedBefore: z.string().optional().describe("Filter items updated before this date (ISO 8601)"),
+        metadata: z.record(z.string()).optional().describe("Filter by metadata key-value pairs"),
         urlPattern: z.string().optional().describe("Filter by URL pattern (regex)"),
         titlePattern: z.string().optional().describe("Filter by title pattern (regex)")
-      }).optional().describe("Filtering criteria")
+      }).optional().describe("Filtering criteria"),
+      cursor: z.string().optional().describe("Pagination cursor"),
+      limit: z.number().optional().describe("Number of results per page (default: 25, max: 200)")
     },
-    async ({ websetId, filters }) => {
+    async ({ websetId, filters, cursor, limit }) => {
       const requestId = `search_webset_items_exa-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const logger = createRequestLogger(requestId, 'search_webset_items_exa');
       
@@ -259,66 +281,59 @@ export function registerWebsetItemTools(server: McpServer, config?: { exaApiKey?
           timeout: API_CONFIG.REQUEST_TIMEOUT
         });
 
-        // Fetch all items (paginated)
-        let allItems: WebsetItem[] = [];
-        let cursor: string | null = null;
-        let hasMore = true;
+        // Build query parameters with filters
+        const params = new URLSearchParams();
+        if (cursor) params.append('cursor', cursor);
+        if (limit) params.append('limit', limit.toString());
         
-        while (hasMore) {
-          const params = new URLSearchParams();
-          if (cursor) params.append('cursor', cursor);
-          params.append('limit', '100'); // Max per page
-          
-          const url = API_CONFIG.ENDPOINTS.WEBSET_ITEMS.replace(':websetId', websetId);
-          const response = await axiosInstance.get<PaginatedWebsetItemList>(url, { params });
-          
-          allItems = allItems.concat(response.data.data);
-          hasMore = response.data.hasMore;
-          cursor = response.data.nextCursor || null;
-          
-          logger.log(`Fetched ${response.data.data.length} items, total: ${allItems.length}`);
+        // Apply server-side filters
+        if (filters?.type) params.append('type', filters.type);
+        if (filters?.verificationStatus) params.append('verificationStatus', filters.verificationStatus);
+        if (filters?.hasEnrichedData !== undefined) params.append('hasEnrichedData', filters.hasEnrichedData.toString());
+        if (filters?.createdAfter) params.append('createdAfter', filters.createdAfter);
+        if (filters?.createdBefore) params.append('createdBefore', filters.createdBefore);
+        if (filters?.updatedAfter) params.append('updatedAfter', filters.updatedAfter);
+        if (filters?.updatedBefore) params.append('updatedBefore', filters.updatedBefore);
+        
+        // Add metadata filters
+        if (filters?.metadata) {
+          Object.entries(filters.metadata).forEach(([key, value]) => {
+            params.append(`metadata.${key}`, value);
+          });
         }
         
-        // Apply filters
-        let filteredItems = allItems;
-        
-        if (filters) {
-          if (filters.type) {
-            filteredItems = filteredItems.filter(item => item.type === filters.type);
-          }
-          
-          if (filters.verificationStatus) {
-            filteredItems = filteredItems.filter(item => 
-              item.verification?.status === filters.verificationStatus
-            );
-          }
-          
-          if (filters.hasEnrichedData !== undefined) {
-            filteredItems = filteredItems.filter(item => {
-              const hasData = item.enrichedData && Object.keys(item.enrichedData).length > 0;
-              return filters.hasEnrichedData ? hasData : !hasData;
-            });
-          }
-          
-          if (filters.urlPattern) {
-            const urlRegex = new RegExp(filters.urlPattern, 'i');
-            filteredItems = filteredItems.filter(item => urlRegex.test(item.url));
-          }
-          
-          if (filters.titlePattern) {
-            const titleRegex = new RegExp(filters.titlePattern, 'i');
-            filteredItems = filteredItems.filter(item => 
-              item.title && titleRegex.test(item.title)
-            );
-          }
+        // Add enrichment status filters
+        if (filters?.enrichmentStatus) {
+          Object.entries(filters.enrichmentStatus).forEach(([key, value]) => {
+            params.append(`enrichmentStatus.${key}`, value);
+          });
         }
         
-        logger.log(`Filtered to ${filteredItems.length} items from ${allItems.length} total`);
+        const url = API_CONFIG.ENDPOINTS.WEBSET_ITEMS.replace(':websetId', websetId);
+        const response = await axiosInstance.get<PaginatedWebsetItemList>(url, { params });
+        
+        // Apply client-side filters for patterns (if API doesn't support regex)
+        let filteredItems = response.data.data;
+        
+        if (filters?.urlPattern) {
+          const urlRegex = new RegExp(filters.urlPattern, 'i');
+          filteredItems = filteredItems.filter(item => urlRegex.test(item.url));
+        }
+        
+        if (filters?.titlePattern) {
+          const titleRegex = new RegExp(filters.titlePattern, 'i');
+          filteredItems = filteredItems.filter(item => 
+            item.title && titleRegex.test(item.title)
+          );
+        }
+        
+        logger.log(`Retrieved ${response.data.data.length} items, filtered to ${filteredItems.length}`);
         
         const formattedResult = {
           websetId: websetId,
-          totalItems: allItems.length,
           matchingItems: filteredItems.length,
+          hasMore: response.data.hasMore,
+          nextCursor: response.data.nextCursor,
           filters: filters,
           items: filteredItems.map(item => ({
             id: item.id,

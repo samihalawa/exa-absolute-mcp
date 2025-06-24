@@ -22,7 +22,9 @@ import {
   registerWebsetSearchTools,
   registerWebsetEnrichmentTools,
   registerWebsetItemTools,
-  registerWebsetOperationTools
+  registerWebsetOperationTools,
+  registerWebsetExportTools,
+  registerWebsetBatchTools
 } from "./tools/websets/index.js";
 
 import { log } from "./utils/logger.js";
@@ -81,12 +83,36 @@ const availableTools = {
   // Websets API tools - Operations
   'create_import_exa': { name: 'Create Import', description: 'Import data from external sources', enabled: true },
   'get_import_exa': { name: 'Get Import', description: 'Get import job details', enabled: true },
+  'list_imports_exa': { name: 'List Imports', description: 'List all import jobs', enabled: true },
+  'update_import_exa': { name: 'Update Import', description: 'Update import (cancel)', enabled: true },
+  'delete_import_exa': { name: 'Delete Import', description: 'Delete an import job', enabled: true },
   'create_webset_monitor_exa': { name: 'Create Monitor', description: 'Create a monitor for periodic searches', enabled: true },
+  'get_webset_monitor_exa': { name: 'Get Monitor', description: 'Get monitor details', enabled: true },
+  'list_webset_monitors_exa': { name: 'List Monitors', description: 'List all monitors for a webset', enabled: true },
   'update_webset_monitor_exa': { name: 'Update Monitor', description: 'Update monitor settings', enabled: true },
+  'delete_webset_monitor_exa': { name: 'Delete Monitor', description: 'Delete a monitor', enabled: true },
+  'list_monitor_runs_exa': { name: 'List Monitor Runs', description: 'List all runs for a monitor', enabled: true },
+  'get_monitor_run_exa': { name: 'Get Monitor Run', description: 'Get details of a monitor run', enabled: true },
   'create_webhook_exa': { name: 'Create Webhook', description: 'Create webhook for event notifications', enabled: true },
+  'get_webhook_exa': { name: 'Get Webhook', description: 'Get webhook details', enabled: true },
+  'list_webhooks_exa': { name: 'List Webhooks', description: 'List all webhooks', enabled: true },
+  'update_webhook_exa': { name: 'Update Webhook', description: 'Update webhook configuration', enabled: true },
+  'delete_webhook_exa': { name: 'Delete Webhook', description: 'Delete a webhook', enabled: true },
   'list_webhook_attempts_exa': { name: 'List Webhook Attempts', description: 'List webhook delivery attempts', enabled: true },
   'list_events_exa': { name: 'List Events', description: 'List system events', enabled: true },
-  'get_event_exa': { name: 'Get Event', description: 'Get event details', enabled: true }
+  'get_event_exa': { name: 'Get Event', description: 'Get event details', enabled: true },
+  
+  // Websets API tools - Export
+  'create_export_exa': { name: 'Create Export', description: 'Export webset items in various formats', enabled: true },
+  'get_export_exa': { name: 'Get Export', description: 'Get export job status and download URL', enabled: true },
+  'list_exports_exa': { name: 'List Exports', description: 'List all export jobs for a webset', enabled: true },
+  'delete_export_exa': { name: 'Delete Export', description: 'Delete an export job', enabled: true },
+  
+  // Websets API tools - Batch Operations
+  'update_webset_item_exa': { name: 'Update Item', description: 'Update a single webset item', enabled: true },
+  'batch_update_items_exa': { name: 'Batch Update Items', description: 'Update multiple items at once', enabled: true },
+  'batch_delete_items_exa': { name: 'Batch Delete Items', description: 'Delete multiple items at once', enabled: true },
+  'batch_verify_items_exa': { name: 'Batch Verify Items', description: 'Verify multiple items at once', enabled: true }
 };
 
 /**
@@ -218,10 +244,30 @@ export default function ({ config }: { config: z.infer<typeof configSchema> }) {
     const websetAutomationTools = [
       'create_import_exa',                // Import CSV/JSON data
       'get_import_exa',                   // Check import status
+      'list_imports_exa',                 // List all imports
+      'update_import_exa',                // Cancel imports
+      'delete_import_exa',                // Delete imports
       'create_webset_monitor_exa',        // Set up automated monitoring
+      'get_webset_monitor_exa',           // Get monitor details
+      'list_webset_monitors_exa',         // List all monitors
       'update_webset_monitor_exa',        // Adjust monitor settings
+      'delete_webset_monitor_exa',        // Delete monitors
+      'list_monitor_runs_exa',            // View monitor run history
+      'get_monitor_run_exa',              // Get run details
       'create_webhook_exa',               // Real-time notifications
+      'get_webhook_exa',                  // Get webhook details
+      'list_webhooks_exa',                // List all webhooks
+      'update_webhook_exa',               // Update webhook config
+      'delete_webhook_exa',               // Delete webhooks
       'list_webhook_attempts_exa'         // Debug webhooks
+    ];
+    
+    // Export Tools (Data Output)
+    const websetExportTools = [
+      'create_export_exa',                // Export to CSV/JSON/XLSX
+      'get_export_exa',                   // Get export status and download URL
+      'list_exports_exa',                 // List all exports
+      'delete_export_exa'                 // Delete exports
     ];
     
     // Search & Data Management Tools
@@ -242,11 +288,21 @@ export default function ({ config }: { config: z.infer<typeof configSchema> }) {
       'get_event_exa'                     // Event details
     ];
     
+    // Batch Operations Tools
+    const websetBatchTools = [
+      'update_webset_item_exa',           // Update single item
+      'batch_update_items_exa',           // Batch update items
+      'batch_delete_items_exa',           // Batch delete items
+      'batch_verify_items_exa'            // Batch verify items
+    ];
+    
     // Register all Websets tools based on workflow groupings
     const allWebsetTools = [
       ...websetCoreTools,
       ...websetEnrichmentTools,
       ...websetAutomationTools,
+      ...websetExportTools,
+      ...websetBatchTools,
       ...websetManagementTools,
       ...websetSystemTools
     ];
@@ -264,6 +320,10 @@ export default function ({ config }: { config: z.infer<typeof configSchema> }) {
       .some(tool => shouldRegisterTool(tool));
     const needsOperations = [...websetAutomationTools, ...websetSystemTools]
       .some(tool => shouldRegisterTool(tool));
+    const needsExport = websetExportTools
+      .some(tool => shouldRegisterTool(tool));
+    const needsBatch = websetBatchTools
+      .some(tool => shouldRegisterTool(tool));
     
     // Register the tool groups
     if (needsManagement) {
@@ -280,6 +340,12 @@ export default function ({ config }: { config: z.infer<typeof configSchema> }) {
     }
     if (needsOperations) {
       registerWebsetOperationTools(server, config);
+    }
+    if (needsExport) {
+      registerWebsetExportTools(server, config);
+    }
+    if (needsBatch) {
+      registerWebsetBatchTools(server, config);
     }
     
     // Track which tools were registered

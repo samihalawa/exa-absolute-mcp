@@ -31,7 +31,9 @@ export const API_CONFIG = {
     WEBHOOK_BY_ID: '/websets/v0/webhooks/:webhookId',
     WEBHOOK_ATTEMPTS: '/websets/v0/webhooks/:webhookId/attempts',
     EVENTS: '/websets/v0/events',
-    EVENT_BY_ID: '/websets/v0/events/:eventId'
+    EVENT_BY_ID: '/websets/v0/events/:eventId',
+    WEBSET_EXPORTS: '/websets/v0/websets/:websetId/exports',
+    WEBSET_EXPORT_BY_ID: '/websets/v0/websets/:websetId/exports/:exportId'
   },
   DEFAULT_NUM_RESULTS: 5,
   DEFAULT_MAX_CHARACTERS: 3000,

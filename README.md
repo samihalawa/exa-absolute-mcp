@@ -161,6 +161,46 @@ Track what's happening in your system:
 - **list_events_exa**: Monitor all system events
 - **get_event_exa**: Get detailed event information
 
+##### 📤 Export Tools
+Export your data in various formats:
+- **create_export_exa**: Export webset items to CSV/JSON/XLSX
+- **get_export_exa**: Check export status and get download URL
+- **list_exports_exa**: List all export jobs
+- **delete_export_exa**: Delete export files
+
+##### 🔧 Advanced Features
+
+**Batch Operations:**
+- **update_webset_item_exa**: Update single item metadata and verification
+- **batch_update_items_exa**: Update multiple items at once
+- **batch_delete_items_exa**: Delete multiple items efficiently
+- **batch_verify_items_exa**: Bulk verify items
+
+**Enhanced Webhook Management:**
+- **get_webhook_exa**: Get webhook details
+- **list_webhooks_exa**: List all webhooks
+- **update_webhook_exa**: Update webhook configuration
+- **delete_webhook_exa**: Remove webhooks
+
+**Complete Monitor Management:**
+- **get_webset_monitor_exa**: Get monitor details
+- **list_webset_monitors_exa**: List all monitors for a webset
+- **delete_webset_monitor_exa**: Delete monitors
+- **list_monitor_runs_exa**: View monitor run history
+- **get_monitor_run_exa**: Get specific run details
+
+**Import Management:**
+- **list_imports_exa**: List all import jobs
+- **update_import_exa**: Cancel running imports
+- **delete_import_exa**: Delete import data
+
+**Advanced Filtering:**
+All list operations now support advanced filtering:
+- Filter by type, verification status, enrichment status
+- Date range filters (createdAfter, createdBefore, updatedAfter, updatedBefore)
+- Metadata filters
+- Pattern matching for URLs and titles
+
 #### Common Workflow Examples
 
 **Lead Discovery Flow:**

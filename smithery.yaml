@@ -1,1 +1,99 @@
-runtime: typescript 
+version: 1
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: ['exaApiKey']
+    properties:
+      exaApiKey:
+        type: string
+        description: "Your Exa API key for web search capabilities (required)"
+      numResults:
+        type: number
+        description: "Default number of search results to return (1-10)"
+        default: 5
+        minimum: 1
+        maximum: 10
+      includeDomains:
+        type: array
+        description: "List of domains to restrict search results to"
+        items:
+          type: string
+      excludeDomains:
+        type: array
+        description: "List of domains to exclude from search results"
+        items:
+          type: string
+      enableWebSearch:
+        type: boolean
+        description: "Enable general web search functionality"
+        default: true
+      enablePaperSearch:
+        type: boolean
+        description: "Enable academic paper search functionality"
+        default: true
+      enableCompanySearch:
+        type: boolean
+        description: "Enable company/business search functionality"
+        default: true
+      enableLinkedInSearch:
+        type: boolean
+        description: "Enable LinkedIn profile search functionality"
+        default: true
+      enableWikipediaSearch:
+        type: boolean
+        description: "Enable Wikipedia search functionality"
+        default: true
+      enableGitHubSearch:
+        type: boolean
+        description: "Enable GitHub repository search functionality"
+        default: true
+      enableCrawling:
+        type: boolean
+        description: "Enable web page crawling for detailed content extraction"
+        default: true
+      debugMode:
+        type: boolean
+        description: "Enable debug logging"
+        default: false
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['.smithery/index.cjs'],
+      env: {
+        EXA_API_KEY: config.exaApiKey,
+        NUM_RESULTS: config.numResults?.toString() || '5',
+        INCLUDE_DOMAINS: config.includeDomains?.join(',') || '',
+        EXCLUDE_DOMAINS: config.excludeDomains?.join(',') || '',
+        ENABLE_WEB_SEARCH: config.enableWebSearch ? 'true' : 'false',
+        ENABLE_PAPER_SEARCH: config.enablePaperSearch ? 'true' : 'false',
+        ENABLE_COMPANY_SEARCH: config.enableCompanySearch ? 'true' : 'false',
+        ENABLE_LINKEDIN_SEARCH: config.enableLinkedInSearch ? 'true' : 'false',
+        ENABLE_WIKIPEDIA_SEARCH: config.enableWikipediaSearch ? 'true' : 'false',
+        ENABLE_GITHUB_SEARCH: config.enableGitHubSearch ? 'true' : 'false',
+        ENABLE_CRAWLING: config.enableCrawling ? 'true' : 'false',
+        DEBUG_MODE: config.debugMode ? 'true' : 'false'
+      }
+    })
+exampleConfig:
+  exaApiKey: "exa_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  numResults: 5
+  enableWebSearch: true
+  enablePaperSearch: true
+  enableCompanySearch: true
+  enableLinkedInSearch: true
+  enableWikipediaSearch: true
+  enableGitHubSearch: true
+  enableCrawling: true
+  debugMode: false
+description: "🔍 Exa MCP Server - Advanced web search with academic papers, companies, LinkedIn, Wikipedia, GitHub, and real-time content crawling"
+tags:
+  - "search"
+  - "web"
+  - "research"
+  - "papers"
+  - "linkedin"
+  - "wikipedia"
+  - "github"
+  - "crawling"
+  - "exa"

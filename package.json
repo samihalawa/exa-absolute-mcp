@@ -1,7 +1,7 @@
 {
-  "name": "exa-mcp-server",
-  "version": "2.0.0",
-  "description": "A Model Context Protocol server with Exa for web search, academic paper search, and Twitter/X.com search. Provides real-time web searches with configurable tool selection, allowing users to enable or disable specific search capabilities. Supports customizable result counts, live crawling options, and returns content from the most relevant websites.",
+  "name": "exa-absolute-mcp",
+  "version": "1.0.0",
+  "description": "Complete Exa MCP Server with both Search API and Websets API. Provides comprehensive web search, academic paper search, Twitter/X.com search, and advanced data collection management through Websets.",
   "type": "module",
   "module": "./src/index.ts",
   "repository": {

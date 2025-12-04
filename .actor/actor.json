@@ -1,0 +1,8 @@
+{
+    "actorSpecification": 1,
+    "name": "exa-absolute-mcp",
+    "title": "Exa Absolute MCP",
+    "description": "MCP server for Exa search (absolute)",
+    "version": "0.1",
+    "dockerfile": "./Dockerfile"
+}
